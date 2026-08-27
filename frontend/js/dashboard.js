@@ -410,9 +410,10 @@ async function initGeospatialMap() {
 
   mapInstance = L.map('brazil-map').setView([-14.235, -51.925], 4);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; CartoDB &copy; OpenStreetMap',
-    maxZoom: 18
+  L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    maxZoom: 18,
+    subdomains: 'abcd'
   }).addTo(mapInstance);
 
   try {
