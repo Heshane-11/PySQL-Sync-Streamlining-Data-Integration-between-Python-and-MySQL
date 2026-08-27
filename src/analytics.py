@@ -17,12 +17,30 @@ from src.db import db
 logger = logging.getLogger(__name__)
 console = Console(force_terminal=True)
 
+import time
+
 class AnalyticsEngine:
     def __init__(self):
         self.db = db
+        self._cache = {}
+        self._cache_ttl = 300  # 5 minutes in-memory cache
+
+    def _get_cached(self, key: str):
+        if key in self._cache:
+            val, timestamp = self._cache[key]
+            if time.time() - timestamp < self._cache_ttl:
+                return val
+        return None
+
+    def _set_cached(self, key: str, val: Any):
+        self._cache[key] = (val, time.time())
 
     def get_kpi_summary(self) -> Dict[str, Any]:
-        """Calculates overarching executive e-commerce KPIs."""
+        """Calculates overarching executive e-commerce KPIs with instant in-memory cache."""
+        cached = self._get_cached("kpi_summary")
+        if cached and cached.get("total_orders", 0) > 0:
+            return cached
+
         try:
             kpi_query = """
             SELECT 
@@ -35,7 +53,7 @@ class AnalyticsEngine:
             """
             df = self.db.execute_query(kpi_query)
             row = df.iloc[0]
-            return {
+            res = {
                 "total_orders": int(row["total_orders"] or 0),
                 "total_customers": int(row["total_customers"] or 0),
                 "total_products": int(row["total_products"] or 0),
@@ -43,6 +61,9 @@ class AnalyticsEngine:
                 "total_revenue": float(row["total_revenue"] or 0.0),
                 "avg_order_value": float(row["avg_order_value"] or 0.0),
             }
+            if res["total_orders"] > 0:
+                self._set_cached("kpi_summary", res)
+            return res
         except Exception as e:
             logger.error(f"Error computing KPIs: {e}")
             return {

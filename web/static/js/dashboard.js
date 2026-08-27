@@ -87,10 +87,12 @@ function updateApiIndicator() {
   }
 }
 
+let loadedTabs = new Set();
+
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   updateApiIndicator();
-  loadAllData();
+  loadInitialData();
   setupQuerySelector();
   setupSqlStudio();
   setupEtlRunner();
@@ -98,18 +100,24 @@ document.addEventListener('DOMContentLoaded', () => {
   setupPdfExport();
 });
 
-function loadAllData() {
+// Fast initial load (only overview essentials)
+function loadInitialData() {
   loadSystemStatus();
   loadKPIs();
   loadAnalyticsOverview();
-  loadMLForecast();
-  loadRFMSegments();
-  loadMarketBasket();
-  loadLogisticsDelay();
-  loadClvAndChurn();
+  loadedTabs.add('tab-overview');
 }
 
-// Navigation Handling
+// Complete refresh (clears tab cache)
+function loadAllData() {
+  loadedTabs.clear();
+  loadSystemStatus();
+  loadKPIs();
+  loadAnalyticsOverview();
+  loadedTabs.add('tab-overview');
+}
+
+// Smart Tab Navigation with On-Demand Lazy Loading
 function initNavigation() {
   const navLinks = document.querySelectorAll('.nav-link');
   navLinks.forEach(link => {
@@ -129,8 +137,18 @@ function initNavigation() {
         activeTabEl.classList.add('active');
       }
 
+      // Lazy load tab data on first visit
       if (targetTab === 'tab-geo') {
-        setTimeout(initGeospatialMap, 200);
+        setTimeout(initGeospatialMap, 150);
+      } else if (targetTab === 'tab-ml' && !loadedTabs.has('tab-ml')) {
+        loadedTabs.add('tab-ml');
+        loadMLForecast();
+        loadRFMSegments();
+        loadMarketBasket();
+        loadClvAndChurn();
+      } else if (targetTab === 'tab-logistics' && !loadedTabs.has('tab-logistics')) {
+        loadedTabs.add('tab-logistics');
+        loadLogisticsDelay();
       }
     });
   });
@@ -410,10 +428,9 @@ async function initGeospatialMap() {
 
   mapInstance = L.map('brazil-map').setView([-14.235, -51.925], 4);
 
-  L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    maxZoom: 18,
-    subdomains: 'abcd'
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 18
   }).addTo(mapInstance);
 
   try {

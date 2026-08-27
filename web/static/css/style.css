@@ -473,3 +473,11 @@ table.custom-table tr:hover td {
   .main-wrapper { margin-left: 80px; }
   .charts-grid { grid-template-columns: 1fr; }
 }
+
+/* Watermark-Free Leaflet Dark Mode Tiles */
+.leaflet-tile-pane {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) !important;
+}
+.leaflet-container {
+  background: #0b0f19 !important;
+}

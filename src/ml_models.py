@@ -12,15 +12,34 @@ from src.db import db
 
 logger = logging.getLogger(__name__)
 
+import time
+
 class MachineLearningHub:
     def __init__(self):
         self.db = db
+        self._cache = {}
+        self._cache_ttl = 600  # 10 minutes in-memory cache
+
+    def _get_cached(self, key: str):
+        if key in self._cache:
+            val, timestamp = self._cache[key]
+            if time.time() - timestamp < self._cache_ttl:
+                return val
+        return None
+
+    def _set_cached(self, key: str, val: Any):
+        self._cache[key] = (val, time.time())
 
     # --------------------------------------------------------------------------
     # 1. RFM Customer Segmentation (K-Means)
     # --------------------------------------------------------------------------
     def run_rfm_segmentation(self, n_clusters: int = 4, sample_limit: int = 50000) -> Dict[str, Any]:
-        """Performs RFM analysis and K-Means segmentation on customer transaction data."""
+        """Performs RFM analysis and K-Means segmentation on customer transaction data with caching."""
+        cache_key = f"rfm_{n_clusters}_{sample_limit}"
+        cached = self._get_cached(cache_key)
+        if cached:
+            return cached
+
         try:
             # Query RFM metrics directly using SQL
             rfm_query = f"""
@@ -93,12 +112,14 @@ class MachineLearningHub:
                 ["customer_unique_id", "recency", "frequency", "monetary", "segment_name"]
             ].to_dict(orient="records")
 
-            return {
+            res = {
                 "status": "success",
                 "total_customers_analyzed": len(df),
                 "segments": sorted(segment_stats, key=lambda x: x["total_revenue"], reverse=True),
                 "sample_points": sample_points,
             }
+            self._set_cached(cache_key, res)
+            return res
         except Exception as e:
             logger.error(f"Error running RFM segmentation: {e}")
             return {"status": "error", "message": str(e)}
@@ -107,7 +128,12 @@ class MachineLearningHub:
     # 2. Sales & Revenue Time-Series Forecasting
     # --------------------------------------------------------------------------
     def run_sales_forecast(self, forecast_months: int = 6) -> Dict[str, Any]:
-        """Generates historical sales time-series and forecasts upcoming revenue."""
+        """Generates historical sales time-series and forecasts upcoming revenue with caching."""
+        cache_key = f"forecast_{forecast_months}"
+        cached = self._get_cached(cache_key)
+        if cached:
+            return cached
+
         try:
             # Query historical monthly sales
             query = """
@@ -169,7 +195,7 @@ class MachineLearningHub:
                     "upper_bound": round(predicted_val + 1.96 * residual_std, 2),
                 })
 
-            return {
+            res = {
                 "status": "success",
                 "historical": historical_data,
                 "forecast": forecast_data,
@@ -178,6 +204,8 @@ class MachineLearningHub:
                      max(historical_data[-1]["actual_sales"], 1.0)) * 100, 2
                 ),
             }
+            self._set_cached(cache_key, res)
+            return res
         except Exception as e:
             logger.error(f"Error running sales forecast: {e}")
             return {"status": "error", "message": str(e)}
@@ -186,7 +214,12 @@ class MachineLearningHub:
     # 3. Market Basket & Product Affinity Analysis
     # --------------------------------------------------------------------------
     def run_market_basket_analysis(self, top_n: int = 10) -> Dict[str, Any]:
-        """Calculates frequent product category co-purchases in multi-item orders."""
+        """Calculates frequent product category co-purchases in multi-item orders with caching."""
+        cache_key = f"basket_{top_n}"
+        cached = self._get_cached(cache_key)
+        if cached:
+            return cached
+
         try:
             query = """
             SELECT 
@@ -201,7 +234,6 @@ class MachineLearningHub:
             """
             df = self.db.execute_query(query)
             if df.empty:
-                # Return top individual categories if multi-item pairs are small
                 return {"status": "success", "rules": [], "summary": "Single-item dominance in transactions"}
 
             pairs = df.groupby(["item_a", "item_b"]).size().reset_index(name="co_occurrence_count")
@@ -216,10 +248,12 @@ class MachineLearningHub:
                     "recommendation": f"Cross-promote '{row['item_a']}' with '{row['item_b']}'"
                 })
 
-            return {
+            res = {
                 "status": "success",
                 "rules": rules,
             }
+            self._set_cached(cache_key, res)
+            return res
         except Exception as e:
             logger.error(f"Error running market basket analysis: {e}")
             return {"status": "error", "message": str(e)}
@@ -228,7 +262,11 @@ class MachineLearningHub:
     # 4. Logistics & Delivery Delay ML Predictor (Classification)
     # --------------------------------------------------------------------------
     def get_logistics_delay_analysis(self) -> Dict[str, Any]:
-        """Calculates historical delivery delay rates and trains delay risk predictor."""
+        """Calculates historical delivery delay rates and trains delay risk predictor with caching."""
+        cached = self._get_cached("logistics_delay")
+        if cached:
+            return cached
+
         try:
             query = """
             SELECT 
@@ -276,7 +314,7 @@ class MachineLearningHub:
             state_delay["avg_days"] = state_delay["avg_days"].round(1)
             state_delay = state_delay.sort_values(by="delay_pct", ascending=False).head(10)
 
-            return {
+            res = {
                 "status": "success",
                 "total_analyzed": total_orders,
                 "overall_delayed_count": delayed_orders,
@@ -285,6 +323,8 @@ class MachineLearningHub:
                 "avg_delivery_days": avg_delivery_days,
                 "top_delayed_states": state_delay.to_dict(orient="records"),
             }
+            self._set_cached("logistics_delay", res)
+            return res
         except Exception as e:
             logger.error(f"Error computing logistics delay: {e}")
             return {"status": "error", "message": str(e)}
@@ -293,7 +333,11 @@ class MachineLearningHub:
     # 5. Customer Lifetime Value (CLV) & Churn Risk Probability
     # --------------------------------------------------------------------------
     def get_clv_and_churn_analysis(self) -> Dict[str, Any]:
-        """Estimates Customer Lifetime Value and predicts Churn risk probability."""
+        """Estimates Customer Lifetime Value and predicts Churn risk probability with caching."""
+        cached = self._get_cached("clv_churn")
+        if cached:
+            return cached
+
         try:
             query = """
             SELECT 
@@ -336,7 +380,7 @@ class MachineLearningHub:
             medium_churn = df[(df["churn_probability_pct"] >= 35) & (df["churn_probability_pct"] < 70)]
             high_churn = df[df["churn_probability_pct"] >= 70]
 
-            return {
+            res = {
                 "status": "success",
                 "total_customers": len(df),
                 "avg_predicted_clv": round(float(df["estimated_12m_clv"].mean()), 2),
@@ -359,6 +403,8 @@ class MachineLearningHub:
                     }
                 }
             }
+            self._set_cached("clv_churn", res)
+            return res
         except Exception as e:
             logger.error(f"Error calculating CLV & Churn: {e}")
             return {"status": "error", "message": str(e)}
