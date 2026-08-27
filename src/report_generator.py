@@ -1,12 +1,17 @@
 import io
 from datetime import datetime
 import logging
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
-)
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
+    )
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    HAS_REPORTLAB = True
+except ImportError:
+    HAS_REPORTLAB = False
 
 from src.analytics import analytics_engine
 from src.ml_models import ml_hub
@@ -16,6 +21,8 @@ logger = logging.getLogger(__name__)
 class ReportGenerator:
     def generate_pdf_report(self) -> io.BytesIO:
         """Generates an executive-ready business intelligence PDF report."""
+        if not HAS_REPORTLAB:
+            raise RuntimeError("ReportLab library is not installed. Please install reportlab>=3.6.0.")
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
             buffer,
