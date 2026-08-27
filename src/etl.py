@@ -112,27 +112,32 @@ class ETLPipeline:
 
                 start_table = time.time()
                 
-                # Extract & Clean
-                df = pd.read_csv(file_path, low_memory=False)
-                df = self.clean_dataframe(df, table_name)
-                row_count = len(df)
+                # Memory-safe chunked extraction & load
+                first_chunk = True
+                row_count = 0
+                cols_count = 0
 
-                # Batch Load into DB using SQLAlchemy to_sql
-                df.to_sql(
-                    name=table_name,
-                    con=db.engine,
-                    if_exists="replace",
-                    index=False,
-                    chunksize=self.chunk_size,
-                    method="multi" if db.db_type == "mysql" else None,
-                )
+                for chunk in pd.read_csv(file_path, chunksize=20000, low_memory=False):
+                    chunk = self.clean_dataframe(chunk, table_name)
+                    row_count += len(chunk)
+                    cols_count = len(chunk.columns)
+
+                    chunk.to_sql(
+                        name=table_name,
+                        con=db.engine,
+                        if_exists="replace" if first_chunk else "append",
+                        index=False,
+                        chunksize=self.chunk_size,
+                        method="multi" if db.db_type == "mysql" else None,
+                    )
+                    first_chunk = False
 
                 elapsed_table = time.time() - start_table
                 results.append({
                     "Table": table_name,
                     "Source File": csv_file,
                     "Rows Loaded": f"{row_count:,}",
-                    "Columns": len(df.columns),
+                    "Columns": cols_count,
                     "Time (s)": f"{elapsed_table:.2f}s",
                     "Speed (rows/s)": f"{int(row_count / max(elapsed_table, 0.001)):,}",
                 })
