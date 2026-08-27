@@ -19,7 +19,12 @@ function getApiBaseUrl() {
     return '';
   }
 
-  // Default to local backend or production fallback
+  // If running on Vercel / Netlify / Cloudflare (production cloud)
+  if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('netlify.app')) {
+    return 'https://retailytics-m48i.onrender.com';
+  }
+
+  // Default to local backend for local development
   return 'http://127.0.0.1:8000';
 }
 
