@@ -1,0 +1,41 @@
+services:
+  app:
+    build: .
+    container_name: pysql_sync_app
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_TYPE=mysql
+      - DB_HOST=mysql_db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=ecommerce_pass
+      - DB_NAME=ecommerce
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  mysql_db:
+    image: mysql:8.0
+    container_name: pysql_sync_mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=ecommerce_pass
+      - MYSQL_DATABASE=ecommerce
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pecommerce_pass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
