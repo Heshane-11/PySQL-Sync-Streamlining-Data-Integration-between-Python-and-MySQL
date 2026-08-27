@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PySQL-Sync | Retailytics Enterprise Platform</title>
+  <meta name="description" content="Enterprise E-Commerce Data Engineering, AI Text-to-SQL Assistant, Geospatial Analytics & Predictive Intelligence Platform">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-text">
+        <h2>PySQL-Sync</h2>
+        <span>Retailytics Enterprise</span>
+      </div>
+    </div>
+
+    <ul class="nav-links">
+      <li>
+        <a class="nav-link active" data-tab="tab-overview">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Overview</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-link" data-tab="tab-ai">
+          <i class="fa-solid fa-robot" style="color: #38bdf8;"></i>
+          <span>AI Assistant</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-link" data-tab="tab-geo">
+          <i class="fa-solid fa-map-location-dot" style="color: #ec4899;"></i>
+          <span>Geospatial Map</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-link" data-tab="tab-analytics">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>SQL Analytics</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-link" data-tab="tab-ml">
+          <i class="fa-solid fa-brain" style="color: #a855f7;"></i>
+          <span>AI / ML Hub</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-link" data-tab="tab-logistics">
+          <i class="fa-solid fa-truck-fast" style="color: #f59e0b;"></i>
+          <span>Logistics ML</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-link" data-tab="tab-studio">
+          <i class="fa-solid fa-terminal"></i>
+          <span>SQL Studio</span>
+        </a>
+      </li>
+      <li>
+        <a class="nav-link" data-tab="tab-etl">
+          <i class="fa-solid fa-database"></i>
+          <span>ETL Manager</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="db-badge" style="cursor: pointer;" onclick="openApiConfigModal()" title="Click to configure backend API URL">
+        <div class="db-badge-info">
+          <div class="status-dot"></div>
+          <span id="db-status-badge">Connecting...</span>
+        </div>
+        <i class="fa-solid fa-gear" style="font-size: 11px; opacity: 0.7;"></i>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-wrapper">
+    <header>
+      <div class="header-title">
+        <h1>Enterprise Intelligence Dashboard</h1>
+        <p>Real-time analytics, AI Text-to-SQL Assistant & geospatial intelligence</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="openApiConfigModal()">
+          <i class="fa-solid fa-link"></i> <span id="api-indicator-text">API Config</span>
+        </button>
+        <button class="btn btn-outline" id="btn-export-pdf">
+          <i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> Export PDF Brief
+        </button>
+        <button class="btn btn-outline" onclick="loadAllData(); showToast('Refreshed latest data', 'info');">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+        <button class="btn btn-primary" id="btn-run-etl">
+          <i class="fa-solid fa-bolt"></i> Run Ingestion
+        </button>
+      </div>
+    </header>
+
+    <main class="container">
+
+      <!-- ================================================================= -->
+      <!-- TAB 1: OVERVIEW -->
+      <!-- ================================================================= -->
+      <section id="tab-overview" class="tab-content active">
+        <!-- KPI Cards Grid -->
+        <div class="kpi-grid">
+          <div class="card kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Total Revenue</span>
+              <div class="kpi-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-revenue">Loading...</div>
+            <div class="kpi-sub"><i class="fa-solid fa-arrow-trend-up"></i> All-Time Gross Sales</div>
+          </div>
+
+          <div class="card kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Total Orders</span>
+              <div class="kpi-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-orders">Loading...</div>
+            <div class="kpi-sub"><i class="fa-solid fa-box"></i> Processed Transactions</div>
+          </div>
+
+          <div class="card kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Avg Order Value (AOV)</span>
+              <div class="kpi-icon"><i class="fa-solid fa-receipt"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-aov">Loading...</div>
+            <div class="kpi-sub"><i class="fa-solid fa-check"></i> Per Order Average</div>
+          </div>
+
+          <div class="card kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Unique Customers</span>
+              <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-customers">Loading...</div>
+            <div class="kpi-sub"><i class="fa-solid fa-user-check"></i> Active Shoppers</div>
+          </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="charts-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-chart-area" style="color: var(--primary);"></i> Monthly & Cumulative Revenue Trend</div>
+            </div>
+            <div class="chart-container">
+              <canvas id="salesTrendChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-cubes" style="color: var(--secondary);"></i> Top Product Categories</div>
+            </div>
+            <div class="chart-container">
+              <canvas id="categoryChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="charts-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-chart-column" style="color: var(--secondary);"></i> Customer Distribution by State</div>
+            </div>
+            <div class="chart-container">
+              <canvas id="stateChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-arrow-trend-up" style="color: var(--success);"></i> Annual Sales & YoY Growth</div>
+              <button class="btn btn-outline" style="font-size:11px; padding:4px 8px;" onclick="downloadCsv(13)"><i class="fa-solid fa-download"></i> CSV</button>
+            </div>
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Year</th>
+                    <th style="text-align: right;">Total Sales</th>
+                    <th style="text-align: right;">YoY Growth</th>
+                  </tr>
+                </thead>
+                <tbody id="yoy-table-body">
+                  <tr><td colspan="3" style="text-align:center;">Loading YoY Growth...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 2: AI TEXT-TO-SQL ASSISTANT (RAG) -->
+      <!-- ================================================================= -->
+      <section id="tab-ai" class="tab-content">
+        <div class="card" style="border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(15, 23, 42, 0.75);">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i> AI Text-to-SQL Assistant with Schema-Aware RAG</div>
+            <span class="badge badge-potential">Hybrid RAG Engine</span>
+          </div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+            Ask any question in plain English/Hinglish. The Schema-Aware RAG engine dynamically compiles SQL, executes on the database, and provides natural-language business insights:
+          </p>
+
+          <!-- Prompt Suggestions -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+            <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('ai-prompt-input').value = 'Top 5 cities with highest revenue';">Top 5 Revenue Cities</button>
+            <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('ai-prompt-input').value = '2018 mein aise konse 3 mahine hai jinmein sabse kamm profit hua';">2018 Low Profit Months</button>
+            <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('ai-prompt-input').value = 'Which payment methods are most popular?';">Payment Breakdown</button>
+            <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('ai-prompt-input').value = 'Top 5 best selling product categories';">Top 5 Categories</button>
+            <button class="btn btn-outline" style="font-size:11px; padding:5px 10px;" onclick="document.getElementById('ai-prompt-input').value = 'Which states suffer from highest delivery delays?';">State Delivery Delays</button>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <input type="text" id="ai-prompt-input" placeholder="e.g. 'brother 2018 mein aise konse 3 mahine hai jinmein sabse kamm profit hua'..." style="flex-grow:1; padding:12px 16px; background:#060911; border:1px solid var(--card-border); color:#fff; border-radius:var(--radius-sm); font-size:14px; outline:none; font-family:var(--font-body);" />
+            <button class="btn btn-primary" id="btn-ask-ai" style="padding:12px 24px;">
+              <i class="fa-solid fa-paper-plane"></i> Ask AI
+            </button>
+          </div>
+
+          <div id="ai-response-container" style="display:none; flex-direction:column; gap:16px;">
+            <!-- Generated SQL Badge -->
+            <div style="background:#060911; padding:14px; border-radius:var(--radius-sm); border:1px solid rgba(56, 189, 248, 0.2);">
+              <div style="font-size:11px; color:#38bdf8; font-weight:600; text-transform:uppercase; margin-bottom:6px;"><i class="fa-solid fa-code"></i> Generated SQL Query</div>
+              <pre id="ai-generated-sql" style="font-family:var(--font-mono); font-size:13px; color:#a5f3fc; overflow-x:auto; margin:0;"></pre>
+            </div>
+
+            <!-- Insights Box -->
+            <div id="ai-insights-box" style="background:rgba(99, 102, 241, 0.1); border-left:3px solid var(--primary); padding:12px 16px; border-radius:4px; font-size:13px; color:#cbd5e1;"></div>
+
+            <!-- Result Table -->
+            <div class="table-responsive">
+              <table class="custom-table" id="ai-results-table"></table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 3: GEOSPATIAL MAP -->
+      <!-- ================================================================= -->
+      <section id="tab-geo" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-map-location-dot" style="color: #ec4899;"></i> Brazil Sales & Logistics Geospatial Heatmap</div>
+            <span class="badge badge-champion">1,000,000+ Coordinates</span>
+          </div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+            Interactive geospatial mapping of customer concentration, gross sales volume, and major fulfillment corridors across Brazil:
+          </p>
+          <div id="brazil-map" style="height: 480px; width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--card-border); z-index: 1;"></div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 4: SQL ANALYTICS -->
+      <!-- ================================================================= -->
+      <section id="tab-analytics" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> 14 Core Analytical Queries Explorer</div>
+          </div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Select any business question to execute its SQL query in real-time:</p>
+          
+          <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+            <select id="query-select" style="flex-grow:1; min-width:280px; padding:10px 14px; background:#060911; border:1px solid var(--card-border); color:#fff; border-radius:var(--radius-sm); outline:none; font-family:var(--font-body);">
+              <option value="1">1. List all unique cities where customers are located</option>
+              <option value="2">2. Count the number of orders placed in 2017</option>
+              <option value="3">3. Find total sales per product category</option>
+              <option value="4">4. Calculate % of orders paid in installments</option>
+              <option value="5">5. Count of customers from each state</option>
+              <option value="6">6. Calculate number of orders placed per month in 2018</option>
+              <option value="7">7. Average number of products per order by customer city</option>
+              <option value="8">8. % of total revenue contributed by each category</option>
+              <option value="9">9. Correlation between product price and purchase count</option>
+              <option value="10">10. Total revenue generated by each seller with rank</option>
+              <option value="11">11. Moving average of order values per customer</option>
+              <option value="12">12. Cumulative sales per month for each year</option>
+              <option value="13">13. Year-over-Year (YoY) growth rate of total sales</option>
+              <option value="14">14. Top 3 highest spending customers in each year</option>
+            </select>
+            <button class="btn btn-primary" id="btn-run-query">
+              <i class="fa-solid fa-play"></i> Execute Query
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table" id="query-results-table">
+              <thead><tr><th>Status</th></tr></thead>
+              <tbody><tr><td>Click "Execute Query" above to view live results.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 5: MACHINE LEARNING HUB -->
+      <!-- ================================================================= -->
+      <section id="tab-ml" class="tab-content">
+        <!-- RFM Segmentation -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-users-gear" style="color: var(--accent);"></i> Customer RFM Segmentation (K-Means Clustering)</div>
+            <span class="badge badge-champion">Unsupervised ML</span>
+          </div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+            Segments customers based on <strong>Recency (days)</strong>, <strong>Frequency (orders)</strong>, and <strong>Monetary (spend)</strong>:
+          </p>
+          <div class="kpi-grid" id="rfm-cards-container" style="margin-bottom: 20px;">
+            <div class="card" style="padding:16px;"><p>Loading RFM clusters...</p></div>
+          </div>
+        </div>
+
+        <!-- Sales Forecasting -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i> 6-Month Sales & Revenue Time-Series Forecasting</div>
+            <span class="badge badge-loyal">Predictive Model</span>
+          </div>
+          <div class="chart-container" style="height: 320px;">
+            <canvas id="forecastChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Customer Lifetime Value & Churn Risk -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-user-shield" style="color: #38bdf8;"></i> Customer Lifetime Value (CLV) & Churn Risk Engine</div>
+          </div>
+          <div class="kpi-grid" id="clv-kpi-container" style="margin-bottom:16px;"></div>
+        </div>
+
+        <!-- Market Basket Recommendations -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-cart-arrow-down" style="color: var(--secondary);"></i> Market Basket Analysis & Cross-Selling Affinity</div>
+          </div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Top categories bought together in multi-item transactions:</p>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Product Category A</th>
+                  <th>Product Category B</th>
+                  <th style="text-align: right;">Co-Purchased Orders</th>
+                  <th>Cross-Sell Recommendation</th>
+                </tr>
+              </thead>
+              <tbody id="basket-table-body">
+                <tr><td colspan="4" style="text-align:center;">Loading recommendations...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 6: LOGISTICS ML -->
+      <!-- ================================================================= -->
+      <section id="tab-logistics" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-truck-fast" style="color: #f59e0b;"></i> Logistics & Delivery Delay Prediction Engine</div>
+            <span class="badge badge-potential">Classification ML</span>
+          </div>
+          
+          <div class="kpi-grid" id="logistics-kpis" style="margin-bottom:20px;">
+            <div class="card kpi-card">
+              <div class="kpi-top"><span class="kpi-label">On-Time Delivery</span></div>
+              <div class="kpi-value" id="logistics-ontime" style="color:#10b981;">--%</div>
+            </div>
+            <div class="card kpi-card">
+              <div class="kpi-top"><span class="kpi-label">Average Transit Days</span></div>
+              <div class="kpi-value" id="logistics-avgdays">-- days</div>
+            </div>
+            <div class="card kpi-card">
+              <div class="kpi-top"><span class="kpi-label">Delayed Orders Rate</span></div>
+              <div class="kpi-value" id="logistics-delayrate" style="color:#f87171;">--%</div>
+            </div>
+          </div>
+
+          <div class="card-header" style="margin-top:10px;">
+            <div class="card-title" style="font-size:15px;"><i class="fa-solid fa-triangle-exclamation" style="color:#f87171;"></i> Top 10 States by Delivery Delay Probability</div>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Destination State</th>
+                  <th style="text-align: right;">Total Orders</th>
+                  <th style="text-align: right;">Delayed Orders</th>
+                  <th style="text-align: right;">Avg Delivery (Days)</th>
+                  <th style="text-align: right;">Delay Risk %</th>
+                </tr>
+              </thead>
+              <tbody id="delay-states-body">
+                <tr><td colspan="5" style="text-align:center;">Loading delay metrics...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 7: SQL STUDIO -->
+      <!-- ================================================================= -->
+      <section id="tab-studio" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-code" style="color: var(--secondary);"></i> Interactive SQL Studio</div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline" style="padding:6px 12px; font-size:12px;" onclick="document.getElementById('sql-input').value = 'SELECT product_category_name, COUNT(*) as count, AVG(price) as avg_price FROM products JOIN order_items ON products.product_id = order_items.product_id GROUP BY product_category_name ORDER BY count DESC LIMIT 10;';">Example 1</button>
+              <button class="btn btn-outline" style="padding:6px 12px; font-size:12px;" onclick="document.getElementById('sql-input').value = 'SELECT customer_state, COUNT(DISTINCT customer_id) as users, AVG(payment_value) as avg_spend FROM customers JOIN orders ON customers.customer_id = orders.customer_id JOIN payments ON orders.order_id = payments.order_id GROUP BY customer_state ORDER BY avg_spend DESC;';">Example 2</button>
+            </div>
+          </div>
+          <textarea id="sql-input" class="sql-editor" placeholder="Write custom SELECT queries here...">SELECT order_status, COUNT(*) AS count FROM orders GROUP BY order_status;</textarea>
+          <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-primary" id="btn-execute-sql">
+              <i class="fa-solid fa-play"></i> Run Query
+            </button>
+          </div>
+          <div id="sql-studio-result" style="margin-top:20px;"></div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 8: ETL MANAGER -->
+      <!-- ================================================================= -->
+      <section id="tab-etl" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-server" style="color: var(--primary);"></i> High-Speed Batch Ingestion & Database Tables</div>
+          </div>
+          <div class="kpi-grid" style="margin-bottom: 20px;">
+            <div class="card kpi-card">
+              <div class="kpi-top"><span class="kpi-label">Total DB Records</span></div>
+              <div class="kpi-value" id="total-records-count">--</div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Table Name</th>
+                  <th style="text-align: right;">Total Rows Ingested</th>
+                  <th style="text-align: right;">Index Optimization</th>
+                </tr>
+              </thead>
+              <tbody id="etl-stats-body">
+                <tr><td colspan="3" style="text-align:center;">Loading table stats...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- API URL Config Modal -->
+  <div id="api-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card" style="width:90%; max-width:480px; background:#0b1120; border:1px solid rgba(56, 189, 248, 0.4); box-shadow:0 25px 50px -12px rgba(0, 0, 0, 0.7);">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-server" style="color:#38bdf8;"></i> Backend API Configuration</div>
+        <button onclick="closeApiConfigModal()" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+        Configure your FastAPI backend endpoint URL (for decoupled deployments on Render, Railway, or local testing):
+      </p>
+      <input type="text" id="backend-url-input" placeholder="e.g. https://pysql-sync-api.onrender.com" style="width:100%; padding:10px 14px; background:#060911; border:1px solid var(--card-border); color:#fff; border-radius:var(--radius-sm); font-size:13px; outline:none; margin-bottom:16px;" />
+      <div style="display:flex; justify-content:space-between; gap:10px;">
+        <button class="btn btn-outline" onclick="resetToDefaultApi()" style="font-size:12px;">Reset to Local (8000)</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline" onclick="closeApiConfigModal()" style="font-size:12px;">Cancel</button>
+          <button class="btn btn-primary" onclick="saveApiUrl()" style="font-size:12px;">Save & Reconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

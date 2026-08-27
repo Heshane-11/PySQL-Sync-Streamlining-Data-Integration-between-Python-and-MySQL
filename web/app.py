@@ -24,10 +24,22 @@ BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="PySQL-Sync (Retailytics Pro)",
     description="E-Commerce Data Integration, Analytics & Machine Learning Platform",
     version="2.0.0",
+)
+
+# Enable CORS for decoupled frontend deployment
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Ensure directories exist
@@ -38,6 +50,15 @@ TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+@app.get("/api/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "PySQL-Sync API",
+        "version": "2.0.0",
+        "database": db.db_type
+    }
 
 class CustomQueryRequest(BaseModel):
     query: str
