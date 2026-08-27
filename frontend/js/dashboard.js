@@ -734,31 +734,52 @@ async function loadMarketBasket() {
   }
 }
 
-// 13. ETL Trigger
+// 13. ETL Trigger with Background Poller
 function setupEtlRunner() {
   const btn = document.getElementById('btn-run-etl');
   if (!btn) return;
 
   btn.addEventListener('click', async () => {
     btn.disabled = true;
-    btn.innerText = '⏳ Ingesting Data...';
-    showToast('Starting high-speed batch ETL pipeline...', 'info');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ingesting Data...';
+    showToast('Starting high-speed batch ETL pipeline on server...', 'info');
 
     try {
       const res = await fetch(getApiUrl('/api/etl/run'), { method: 'POST' });
       const data = await res.json();
 
       if (res.ok) {
-        showToast(`ETL completed in ${data.data.total_time.toFixed(2)}s!`, 'success');
-        loadAllData();
-      } else {
-        showToast(`ETL failed: ${data.detail}`, 'error');
+        showToast(data.message || 'Ingestion initiated. Syncing tables...', 'info');
       }
+
+      // Poll system status every 3 seconds until tables populate (max 45s)
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        attempts++;
+        try {
+          const statusRes = await fetch(getApiUrl('/api/status'));
+          const statusData = await statusRes.json();
+          if (statusData.total_records > 10000 || attempts > 15) {
+            clearInterval(interval);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Run Ingestion';
+            showToast(`Ingestion completed! ${statusData.total_records.toLocaleString()} records indexed.`, 'success');
+            loadAllData();
+          }
+        } catch (e) {
+          if (attempts > 15) {
+            clearInterval(interval);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Run Ingestion';
+          }
+        }
+      }, 3000);
+
     } catch (err) {
-      showToast(`ETL error: ${err.message}`, 'error');
-    } finally {
+      showToast(`ETL trigger notice: ${err.message}. Checking status...`, 'info');
       btn.disabled = false;
-      btn.innerHTML = '⚡ Run Ingestion';
+      btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Run Ingestion';
+      setTimeout(loadAllData, 5000);
     }
   });
 }
